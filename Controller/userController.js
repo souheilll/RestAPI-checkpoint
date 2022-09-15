@@ -5,7 +5,7 @@ const getAllUser = async (req, res) => {
     try {
         const userList = await User.find()
         if (userList.length === 0) {
-            res.status(201).json({ msg: 'your data is empty' })
+            return res.status(201).json({ msg: 'your data is empty' })
         }
         else {
             res.status(201).json({ users: userList })
@@ -35,31 +35,32 @@ const getOneUser = async (req, res) => {
 
 // add new users////
 const addUser = async (req, res) => {
-    const userInfo = req.body
+    const userInfo = req.body;
     try {
         const newUser = new User({ userName: userInfo.userName, email: userInfo.email, age: userInfo.age });
 
-        const oneUser = await User.findOne({ email: userInfo.email });
+        const oneUser = await User.findOne({ email: newUser.email });
         if (oneUser) {
-            res.status(201).json({ msg: 'user already exist' });
+            return res.status(422).json({ msg: 'user already exist' });
         }
-
         await newUser.save();
-        res.status(201).json({ msg: 'user is successfully added', user: newUser });
+        res.status(201).json({ msg: `${newUser.userName} added successfully`, user: newUser });
 
     } catch (error) {
-        res.status(401).json({ msg: 'add user is failed' })
+        res.status(401).json({ msg: 'add user is failed' });
     }
 }
 
 
-//delet user////
+//delete user////
 const deleteUser = async (req, res) => {
-    const userInfo = req.body;
+    //const userInfo = req.body;
+    id = req.params.id;
     try {
-        const deletedUser = await User.findOneAndRemove({ email: userInfo.email });
+        // const deletedUser = await User.findOneAndRemove({ email: userInfo.email });
+        const deleteUser = await User.findByIdAndDelete(id);
         const remainingUsers = await User.find();
-        res.status(201).json({ msg: 'user was deleted successfully', deletedUser: deletedUser, user: remainingUsers });
+        res.status(201).json({ msg: `${deleteUser.userName} was succefully deleted`, deletedUser: deleteUser, user: remainingUsers });
 
     } catch (error) {
         res.status(401).json({ msg: 'removing operation is failed' });
@@ -68,15 +69,17 @@ const deleteUser = async (req, res) => {
 
 /// update user ////
 const updateUser = async (req, res) => {
-    const userInfo = req.body
+    const id = req.params.id;
+    const userInfo = req.body;
     try {
-        const updatedUser = await User.findOneAndUpdate({ email: userInfo.email },
-            { userName: userInfo.userName }, { age: userInfo.age })
-        res.status(201).json({ msg: 'user was updated successfully', user: updatedUser })
+        // const updatedUser = await User.findOneAndUpdate({ email: userInfo.email },
+        //     { userName: userInfo.userName }, { age: userInfo.age })
+        const updatedUser = await User.findByIdAndUpdate(id, userInfo, { new: true });
+        const allUsers = await User.find();
+        return res.status(201).json({ msg: `${updatedUser.userName} was succefully updated `, user: updatedUser, users: allUsers });
 
     } catch (error) {
-        res.status(401).json({ msg: 'updated failed' })
+        res.status(401).json({ msg: 'updated failed' });
     }
 }
-
 module.exports = { getAllUser, getOneUser, addUser, deleteUser, updateUser }
